@@ -124,13 +124,13 @@ class qbittorrent:
             return
         else:
             tor_info = tor_info[0]
-        if tor_info.state == "metaDL":
-            if time.time() - self.meta_time > 600:
-                self.client.torrents_delete(torrent_hashes=self.ext_hash)
-                self.listener.onDownloadError("Dead Torrent!")
-                self.updater.cancel()
-                return
-        elif tor_info.state == "error":
+        #if tor_info.state == "metaDL":
+            #if time.time() - self.meta_time > 600:
+                #self.client.torrents_delete(torrent_hashes=self.ext_hash)
+                #self.listener.onDownloadError("Dead Torrent!")
+                #self.updater.cancel()
+                #return
+        if tor_info.state == "error":
             self.client.torrents_delete(torrent_hashes=self.ext_hash)
             self.listener.onDownloadError("Error. IDK why, report in support group")
             self.updater.cancel()
