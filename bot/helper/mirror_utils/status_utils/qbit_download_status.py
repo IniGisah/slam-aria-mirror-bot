@@ -1,10 +1,11 @@
-# Implement By - @anasty17 (https://github.com/breakdowns/slam-mirrorbot/commit/0bfba523f095ab1dccad431d72561e0e002e7a59)
-# (c) https://github.com/breakdowns/slam-mirrorbot
+# Implement By - @anasty17 (https://github.com/SlamDevs/slam-mirrorbot/commit/0bfba523f095ab1dccad431d72561e0e002e7a59)
+# (c) https://github.com/SlamDevs/slam-mirrorbot
 # All rights reserved
 
 from bot import DOWNLOAD_DIR, LOGGER, get_client
 from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_file_size, get_readable_time
 from .status import Status
+from time import sleep
 
 
 class QbDownloadStatus(Status):
@@ -14,7 +15,6 @@ class QbDownloadStatus(Status):
         self.__gid = gid
         self.__hash = qbhash
         self.client = client
-        self.markup = None
         self.__uid = listener.uid
         self.listener = listener
         self.message = listener.message
@@ -32,7 +32,7 @@ class QbDownloadStatus(Status):
         Gets total size of the mirror file/folder
         :return: total size of mirror
         """
-        return self.torrent_info().total_size
+        return self.torrent_info().size
 
     def processed_bytes(self):
         return self.torrent_info().downloaded
@@ -47,7 +47,7 @@ class QbDownloadStatus(Status):
         return f"{DOWNLOAD_DIR}{self.__uid}"
 
     def size(self):
-        return get_readable_file_size(self.torrent_info().total_size)
+        return get_readable_file_size(self.torrent_info().size)
 
     def eta(self):
         return get_readable_time(self.torrent_info().eta)
@@ -55,14 +55,13 @@ class QbDownloadStatus(Status):
     def status(self):
         download = self.torrent_info().state
         if download == "queuedDL":
-            status = MirrorStatus.STATUS_WAITING
-        elif download == "metaDL" or download == "checkingResumeData":
-            status = MirrorStatus.STATUS_DOWNLOADING + " (Metadata)"
+            return MirrorStatus.STATUS_WAITING
+        elif download in ["metaDL", "checkingResumeData"]:
+            return MirrorStatus.STATUS_DOWNLOADING + " (Metadata)"
         elif download == "pausedDL":
-            status = MirrorStatus.STATUS_PAUSE
+            return MirrorStatus.STATUS_PAUSE
         else:
-            status = MirrorStatus.STATUS_DOWNLOADING
-        return status
+            return MirrorStatus.STATUS_DOWNLOADING
 
     def torrent_info(self):
         return self.client.torrents_info(torrent_hashes=self.__hash)[0]
@@ -78,5 +77,7 @@ class QbDownloadStatus(Status):
 
     def cancel_download(self):
         LOGGER.info(f"Cancelling Download: {self.name()}")
+        self.client.torrents_pause(torrent_hashes=self.__hash)
+        sleep(0.3)
         self.listener.onDownloadError('Download stopped by user!')
         self.client.torrents_delete(torrent_hashes=self.__hash)
